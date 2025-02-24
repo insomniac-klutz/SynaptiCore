@@ -1,2 +1,2 @@
 # NeuroSynthPrimus
-Genesis Playground &lt;> Automation Agents
+Genesis Playground &lt;> Autonomous Agents
