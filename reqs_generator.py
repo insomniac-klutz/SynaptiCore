@@ -12,8 +12,10 @@ base_packages = [
 
 lm_packages = [
     "smolagents",
-    "litellm"
-
+    "litellm",
+    "langgraph",
+    "langchain_community",
+    "langchain"
 ]
 
 aux_packages = [
