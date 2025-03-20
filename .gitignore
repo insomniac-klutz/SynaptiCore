@@ -171,6 +171,7 @@ cython_debug/
 .pypirc
 
 nsp-1/
+.venv/
 
 *.pdf
 *.png
