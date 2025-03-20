@@ -170,7 +170,7 @@ class DeCypher:
         """
         
         base_tools = [
-            self.DeCypherBot.web_searcher_tool,
+            self.DeCypherBot.lang_tav_web_searcher_tool,
             self.DeCypherBot.calculator_tool
         ]
         
@@ -185,6 +185,23 @@ class DeCypher:
         self.DeCypherBot.langmodel = self.DeCypherBot.langmodel.bind_tools(toolset)
 
         return ToolNode(toolset)
+    
+    # def get_user_input(self):
+    #     """
+    #     Gets input from the user based on the current state.
+    #     Args:
+    #         state: The current state of the application.
+    #     Returns:
+    #         dict: A dictionary containing the user input with key 'user_input'.
+    #     Example:
+    #         >>> state = {}
+    #         >>> result = get_user_input(state)
+    #         Enter something: hello
+    #         >>> print(result)
+    #         {'user_input': 'hello'}
+    #     """
+    
+    #     return {"user_input": input("Enter something: ")}
 
     def draft_default_flow(self,additional_tools = []):
         """
@@ -206,6 +223,7 @@ class DeCypher:
 
         workflow = StateGraph(MessagesState)
         workflow.add_node("agent", self.call_model)
+        # workflow.add_node("get_input", self.get_user_input)
         workflow.add_node("tools", tool_node)
         workflow.add_edge(START, "agent")
 
@@ -215,6 +233,8 @@ class DeCypher:
         )
 
         workflow.add_edge("tools", 'agent')
+
+        # workflow.set_entry_point("get_input")
 
         checkpointer = MemorySaver()
 
