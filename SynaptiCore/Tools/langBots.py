@@ -20,7 +20,8 @@ class langBots:
         self.lang_tav_web_searcher_tool = langTools(self.lang_tav_web_searcher)
         self.calculator_tool = self._calculator
 
-    def lang_tav_web_searcher(self,query: str) -> str:
+    @staticmethod
+    def lang_tav_web_searcher(query: str) -> str:
         """
         Performs a web search using Tavily Search API and returns the results.
         This method utilizes the TavilySearchResults tool to perform an advanced web search
@@ -41,8 +42,9 @@ class langBots:
             include_raw_content=True
         )
         return search_tool.run(query)
-            
-    def lang_duck_web_searcher(self,query: str) -> str:
+
+    @staticmethod     
+    def lang_duck_web_searcher(query: str) -> str:
         """Search the web for real-time information using DuckDuckGo.
         This function performs a web search using DuckDuckGo's search engine to retrieve
         current information based on the provided query.
@@ -63,7 +65,8 @@ class langBots:
         
         return DuckDuckGoSearchRun().run(query)  
     
-    def smol_duck_web_searcher(self, query: str) -> str:
+    @staticmethod
+    def smol_duck_web_searcher(query: str) -> str:
         """Search the web for real-time information.
 
         Args:
@@ -74,7 +77,8 @@ class langBots:
         """
         return self.smolBots.smol_duck_web_searcher().run(str(query))
     
-    def _calculator(self,query: str) -> str:
+    @staticmethod
+    def _calculator(query: str) -> str:
         """Processes the given mathematical expression and returns the calculated result.
 
         Args:

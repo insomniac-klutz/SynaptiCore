@@ -11,14 +11,15 @@ from SynaptiCore.Core.genFuncs import (
 add_dir_to_path(os.getcwd())
 load_env_file()
 
-from SynaptiCore.Tools.liteLM import lang_gemini_flash_2_exp, smol_gemini_flash_2_exp
+from SynaptiCore.Tools.liteLM import create_gemini_flash_2_exp_mods
 from SynaptiCore.Apps.DeCypher import DeCypher 
 from SynaptiCore.Core.langFuncs import pretty_state_print
 
 # In[1]:
 
 # Initialize DeCypher instance with language models
-decypherApp = DeCypher(lang_gemini_flash_2_exp, smol_gemini_flash_2_exp)
+language_models = create_gemini_flash_2_exp_mods(reqs="all")
+decypherApp = DeCypher(*language_models)
 
 # In[2]:
 # Test the DeCypher App with a plain Web Search Query
