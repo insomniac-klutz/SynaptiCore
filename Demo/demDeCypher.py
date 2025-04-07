@@ -11,14 +11,18 @@ from SynaptiCore.Core.genFuncs import (
 add_dir_to_path(os.getcwd())
 load_env_file()
 
-from SynaptiCore.Tools.liteLM import create_gemini_flash_2_exp_mods
+from SynaptiCore.Tools.liteLM import (
+                                        create_gemini_flash_2_exp_mods,
+                                        create_bedrock_claude_sonnet_3_5_mods
+)
 from SynaptiCore.Apps.DeCypher import DeCypher 
 from SynaptiCore.Core.langFuncs import pretty_state_print
 
 # In[1]:
 
 # Initialize DeCypher instance with language models
-language_models = create_gemini_flash_2_exp_mods(reqs="all")
+#language_models = create_gemini_flash_2_exp_mods(reqs="all")
+language_models = create_bedrock_claude_sonnet_3_5_mods(reqs="all")
 decypherApp = DeCypher(*language_models)
 
 # In[2]:

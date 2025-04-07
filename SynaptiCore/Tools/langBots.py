@@ -65,8 +65,7 @@ class langBots:
         
         return DuckDuckGoSearchRun().run(query)  
     
-    @staticmethod
-    def smol_duck_web_searcher(query: str) -> str:
+    def smol_duck_web_searcher(self,query: str) -> str:
         """Search the web for real-time information.
 
         Args:
@@ -77,8 +76,7 @@ class langBots:
         """
         return self.smolBots.smol_duck_web_searcher().run(str(query))
     
-    @staticmethod
-    def _calculator(query: str) -> str:
+    def _calculator(self,query: str) -> str:
         """Processes the given mathematical expression and returns the calculated result.
 
         Args:

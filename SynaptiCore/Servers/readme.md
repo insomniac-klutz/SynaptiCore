@@ -1,0 +1,1 @@
+## Run your server using --> uv run mcpClient.py <path_to_server.py>
