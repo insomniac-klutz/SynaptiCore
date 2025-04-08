@@ -17,9 +17,9 @@ from mcp.types import TextContent
 load_env_file()
 
 # Create an MCP server
-mcp = FastMCP("Snowflake")
+mcpSnowflake = FastMCP("Snowflake")
 
-@mcp.tool()
+@mcpSnowflake.tool()
 def snowflake_exec(sql_query: str) -> str:
     """
     Executes a SQL query on the Snowflake database and retrieves the results.
@@ -50,5 +50,5 @@ def snowflake_exec(sql_query: str) -> str:
 
 # Run the server
 if __name__ == "__main__":
-    print("Starting MCP Server")
-    mcp.run()
+    print("Starting MCP Snowflake Server")
+    mcpSnowflake.run()

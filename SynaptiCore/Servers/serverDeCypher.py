@@ -23,9 +23,9 @@ from SynaptiCore.Core.langFuncs import pretty_state_print
 from mcp.server.fastmcp import FastMCP
 
 # Create an MCP server
-mcp = FastMCP("DeCypher")
+mcpDeCypher = FastMCP("DeCypher")
 
-@mcp.tool()
+@mcpDeCypher.tool()
 def web_search(search_message: str) -> str:
     """
     Performs a web search using the DeCypher application for the given query.
@@ -46,5 +46,5 @@ def web_search(search_message: str) -> str:
 
 # Run the server
 if __name__ == "__main__":
-    print("Starting MCP Server")
-    mcp.run()
+    print("Starting MCP mcpDeCypher Server")
+    mcpDeCypher.run()
