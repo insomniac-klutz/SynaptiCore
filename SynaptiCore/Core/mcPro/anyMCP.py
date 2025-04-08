@@ -11,6 +11,8 @@ from mcp.client.stdio import stdio_client
 
 from litellm import completion
 
+import copy
+
 class anyMCP:
     def __init__(self,model_slug: str):
         # Initialize session and client objects
@@ -24,6 +26,7 @@ class anyMCP:
         self.RUN = False
         self.model_slug = model_slug
         self.tool_dir = defaultdict(lambda: None)
+        self.message_stack = []
     
     async def register_tools(self,server_name,tools):
         for tool in tools:
@@ -93,12 +96,14 @@ class anyMCP:
 
     async def process_query(self, query: str) -> str:
         """Process a query using Claude and available tools"""
-        messages = [
-            {
+        draft_message = {
                 "role": "user",
                 "content": query
             }
-        ]
+
+        self.message_stack.append(draft_message)
+
+        conv_message_stack = copy.deepcopy(self.message_stack)
 
         responses = []
         
@@ -118,7 +123,7 @@ class anyMCP:
         # Initial LM API call
         response = completion(
                 model=self.model_slug,
-                messages=messages,
+                messages=conv_message_stack,
                 tools=available_tools,
                 tool_choice="auto"
             )
@@ -130,6 +135,10 @@ class anyMCP:
         content = response.choices[0]
         if content.finish_reason == 'stop' and content.message.tool_calls is None:
             final_text.append(content.message.content)
+            draft_message = {
+                "role": "assistant",
+                "content": content.message.content
+            }
         elif content.finish_reason == 'tool_calls' or content.message.tool_calls is not None:
             for tool_inf in content.message.tool_calls:
                 tool_name = tool_inf.function.name
@@ -142,7 +151,7 @@ class anyMCP:
                 final_text.append(f"[Calling tool {tool_name} with args {tool_args} on server {self.tool_dir[tool_name]}]")
 
                 # assistant_message 
-                messages.append({
+                conv_message_stack.append({
                     "role": content.message.role,
                     "content": content.message.content,
                     "tool_calls": content.message.tool_calls
@@ -151,7 +160,7 @@ class anyMCP:
                 print("result", result)
 
                 # tool_res_message 
-                messages.append({
+                conv_message_stack.append({
                     "tool_call_id": tool_id,
                     "role": "tool",
                     "name": tool_name,
@@ -159,14 +168,14 @@ class anyMCP:
                 })
 
             print("\n")
-            for message in messages:
+            for message in conv_message_stack:
                 print("#",message)
                 print("\n")
 
             # Get next response from Claude
             response = completion(
                     model=self.model_slug,
-                    messages=messages,
+                    messages=conv_message_stack,
                     tools=available_tools,
                     tool_choice="auto"
                 )
@@ -174,12 +183,16 @@ class anyMCP:
             print("\n")
             print("response", response)
             print("\n")
-            for message in messages:
+            for message in conv_message_stack:
                 print("#",message)
                 print("\n")
 
             print("##",response.choices[0].message.content)
             final_text.append(response.choices[0].message.content)
+            draft_message = {
+                "role": "assistant",
+                "content": response.choices[0].message.content
+            }
 
         return "\n".join(final_text)
     async def chat_loop(self):
