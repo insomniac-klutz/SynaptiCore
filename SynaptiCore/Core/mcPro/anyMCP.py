@@ -123,14 +123,14 @@ class anyMCP:
                 tool_choice="auto"
             )
 
+        print(response)
         # Process response and handle tool calls
         final_text = []
 
         content = response.choices[0]
-        if content.finish_reason == 'stop':
+        if content.finish_reason == 'stop' and content.message.tool_calls is None:
             final_text.append(content.message.content)
-
-        elif content.finish_reason == 'tool_calls':
+        elif content.finish_reason == 'tool_calls' or content.message.tool_calls is not None:
             for tool_inf in content.message.tool_calls:
                 tool_name = tool_inf.function.name
                 tool_args = literal_eval(tool_inf.function.arguments)
