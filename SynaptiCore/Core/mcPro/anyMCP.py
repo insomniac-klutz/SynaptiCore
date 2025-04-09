@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 
 from ast import literal_eval
+from collections import defaultdict
 
 from typing import Optional
 from contextlib import AsyncExitStack
@@ -10,6 +11,8 @@ from mcp.client.stdio import stdio_client
 
 from litellm import completion
 
+import copy
+
 class anyMCP:
     def __init__(self,model_slug: str):
         # Initialize session and client objects
@@ -17,17 +20,52 @@ class anyMCP:
 
         load_dotenv()  # Load environment variables
         
-        self.session: Optional[ClientSession] = None
+        #self.session: Optional[ClientSession] = None
+        self.sessions = {}
         self.exit_stack = AsyncExitStack()
         self.RUN = False
         self.model_slug = model_slug
+        self.tool_dir = defaultdict(lambda: None)
+        self.message_stack = []
+    
+    async def register_tools(self,server_name,tools):
+        for tool in tools:
+            if not self.tool_dir.get(tool.name):
+                self.tool_dir[tool.name] = server_name
+            else:
+                print(f'''Unable to register Tool '{tool.name}' with {server_name} . 
+                        It is already registered to server {self.tool_dir[tool.name]}''')
+                
+                counter = 0
+                while True:
+                    ask_user = input(''' Which server would you like to use? \n\n1: {self.tool_dir[tool.name]} \n2: {server_name}\n\nInput 1 or 2 to continue : ''')
+                    
+                    try:
+                        assert ask_user in ['1','2'], "Invalid input. Please enter 1 or 2."
 
-    async def connect_to_server(self, server_script_path: str):
+                        if ask_user == '1':
+                            print(f"Tool '{tool.name}' is already registered to server {self.tool_dir[tool.name]}.")
+                            break
+                        elif ask_user == '2':
+                            print(f"Tool '{tool.name}' is now registered to server {server_name}.")
+                            self.tool_dir[tool.name] = server_name
+                            break
+                    except AssertionError as e:
+                        if counter < 3:
+                            counter += 1
+                            continue
+                        else:
+                            print(f"Maximum attempts reached. No changes made for {tool.name}.")
+
+    async def connect_to_server(self, server_name: str,server_script_path: str):
         """Connect to an MCP server
 
         Args:
             server_script_path: Path to the server script (.py or .js)
         """
+        if server_name in self.sessions:
+            raise ValueError(f"Server with name '{server_name}' is already connected.")
+        
         is_python = server_script_path.endswith('.py')
         is_js = server_script_path.endswith('.js')
         if not (is_python or is_js):
@@ -41,26 +79,38 @@ class anyMCP:
         )
 
         stdio_transport = await self.exit_stack.enter_async_context(stdio_client(server_params))
-        self.stdio, self.write = stdio_transport
-        self.session = await self.exit_stack.enter_async_context(ClientSession(self.stdio, self.write))
-
-        await self.session.initialize()
+        stdio, write = stdio_transport
+        session = await self.exit_stack.enter_async_context(ClientSession(stdio, write))
+        await session.initialize()
 
         # List available tools
-        response = await self.session.list_tools()
+        response = await session.list_tools()
         tools = response.tools
-        print("\nConnected to server with tools:", [tool for tool in tools])
+
+        # Register tools from this server with this session
+        await self.register_tools(server_name,tools)
+        print(f"\nConnected to server '{server_name}' with tools:", [tool for tool in tools])            
+                    
+        # Store the session and its resources
+        self.sessions[server_name] = session
 
     async def process_query(self, query: str) -> str:
         """Process a query using Claude and available tools"""
-        messages = [
-            {
+        draft_message = {
                 "role": "user",
                 "content": query
             }
-        ]
 
-        response = await self.session.list_tools()
+        self.message_stack.append(draft_message)
+
+        conv_message_stack = copy.deepcopy(self.message_stack)
+
+        responses = []
+        
+        for server_name, session in self.sessions.items():
+            resp = await session.list_tools()
+            responses.append(resp)
+
         available_tools = [{
             "type": "function",
             "function": {
@@ -68,28 +118,28 @@ class anyMCP:
             "description": tool.description,
             "parameters": tool.inputSchema
             }
-        } for tool in response.tools]
+        } for response in responses for tool in response.tools]
 
-        # Initial Claude API call
+        # Initial LM API call
         response = completion(
                 model=self.model_slug,
-                messages=messages,
+                messages=conv_message_stack,
                 tools=available_tools,
                 tool_choice="auto"
             )
-        
-        print("respone",response)
 
+        print(response)
         # Process response and handle tool calls
         final_text = []
 
-        assistant_message_content = []
-
         content = response.choices[0]
-        if content.finish_reason == 'stop':
+        if content.finish_reason == 'stop' and content.message.tool_calls is None:
             final_text.append(content.message.content)
-            # assistant_message_content.append(content)
-        elif content.finish_reason == 'tool_calls':
+            draft_message = {
+                "role": "assistant",
+                "content": content.message.content
+            }
+        elif content.finish_reason == 'tool_calls' or content.message.tool_calls is not None:
             for tool_inf in content.message.tool_calls:
                 tool_name = tool_inf.function.name
                 tool_args = literal_eval(tool_inf.function.arguments)
@@ -97,11 +147,11 @@ class anyMCP:
                 print(f"Calling tool {tool_name} with args {tool_args} with id {tool_id}")
 
                 # Execute tool call
-                result = await self.session.call_tool(tool_name, tool_args)
-                final_text.append(f"[Calling tool {tool_name} with args {tool_args}]")
+                result = await self.sessions[self.tool_dir[tool_name]].call_tool(tool_name, tool_args)
+                final_text.append(f"[Calling tool {tool_name} with args {tool_args} on server {self.tool_dir[tool_name]}]")
 
                 # assistant_message 
-                messages.append({
+                conv_message_stack.append({
                     "role": content.message.role,
                     "content": content.message.content,
                     "tool_calls": content.message.tool_calls
@@ -110,7 +160,7 @@ class anyMCP:
                 print("result", result)
 
                 # tool_res_message 
-                messages.append({
+                conv_message_stack.append({
                     "tool_call_id": tool_id,
                     "role": "tool",
                     "name": tool_name,
@@ -118,14 +168,14 @@ class anyMCP:
                 })
 
             print("\n")
-            for message in messages:
+            for message in conv_message_stack:
                 print("#",message)
                 print("\n")
 
             # Get next response from Claude
             response = completion(
                     model=self.model_slug,
-                    messages=messages,
+                    messages=conv_message_stack,
                     tools=available_tools,
                     tool_choice="auto"
                 )
@@ -133,12 +183,16 @@ class anyMCP:
             print("\n")
             print("response", response)
             print("\n")
-            for message in messages:
+            for message in conv_message_stack:
                 print("#",message)
                 print("\n")
 
             print("##",response.choices[0].message.content)
             final_text.append(response.choices[0].message.content)
+            draft_message = {
+                "role": "assistant",
+                "content": response.choices[0].message.content
+            }
 
         return "\n".join(final_text)
     async def chat_loop(self):

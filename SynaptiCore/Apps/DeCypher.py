@@ -182,7 +182,7 @@ class DeCypher:
         else:
             toolset = base_tools
 
-        self.DeCypherBot.langmodel = self.DeCypherBot.langmodel.bind_tools(toolset)
+        self.DeCypherBot.langmodel = self.DeCypherBot.langmodel.bind_tools(toolset,tool_choice="auto")
 
         return ToolNode(toolset)
     
