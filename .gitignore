@@ -172,6 +172,7 @@ cython_debug/
 
 nsp-1/
 .venv/
+.vscode/
 
 *.pdf
 *.png
