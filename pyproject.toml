@@ -1,9 +1,25 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "synapticore"
 version = "0.1.0"
-description = "Add your description here"
+description = "Genesis Playground <> Autonomous Agents"
 readme = "README.md"
 requires-python = ">=3.12"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Sankalp Chaurasia", email = "sankalp.212.c@gmail.com"},
+]
+keywords = ["ai", "agents", "language-models", "mcpro", "a2a"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = [
     "boto3==1.36.18",
     "fastapi-mcp>=0.2.0",
@@ -20,8 +36,36 @@ dependencies = [
     "pandas==2.2.3",
     "pymupdf==1.25.3",
     "python-dotenv==1.0.1",
+    "setuptools>=78.1.0",
     "smolagents==1.9.2",
     "snowflake-connector-python==3.13.2",
     "torch==2.2.0",
     "transformers==4.48.3",
 ]
+
+[project.urls]
+"Homepage" = "https://github.com/insomniac-klutz/SynaptiCore"
+"Bug Tracker" = "https://github.com/insomniac-klutz/SynaptiCore/issues"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "black>=23.0.0",
+    "isort>=5.0.0",
+    "mypy>=1.0.0",
+]
+
+[project.scripts]
+synapticore = "SynaptiCore.Servers.mcpServer:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["SynaptiCore"]
+
+[tool.black]
+line-length = 88
+
+[tool.isort]
+profile = "black"
+
+[tool.mypy]
+python_version = "3.12"
