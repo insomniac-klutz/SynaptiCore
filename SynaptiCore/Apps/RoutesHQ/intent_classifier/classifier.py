@@ -150,23 +150,27 @@ def check_salutation(state: IntentClassifierState, llm):
     salutation_str = salutation_chain.invoke({"message": message},
                                              config={"configurable": {"thread_id": 42}})
     
+    #print("salutation_str : ", salutation_str)
     # Update state with salutation result
     state["salutation_type"] = salutation_str.strip().lower()
+
+    #print("state", state)
     
-    # Return the state with a next key to indicate which node to route to
+    # Use proper LangGraph return format - don't nest state in a dictionary
     if state["salutation_type"] == "not_salutation":
-        return {"state": state, "next": "route_query_type"}
+        return {"next": "route_query_type", **state}
     else:
-        return {"state": state, "next": "create_final_intent"}
+        return {"next": "create_final_intent", **state}
 
 
 def route_query_type(state: IntentClassifierState):
     """Route to first query or followup query classifier based on is_first_query flag."""
-    # Return a dictionary with the next node to route to
+    #print("Routing State : " ,state)
+
     if state["is_first_query"]:
-        return {"state": state, "next": "classify_first_query"}
+        return {"next": "classify_first_query", **state}
     else:
-        return {"state": state, "next": "classify_followup_query"}
+        return {"next": "classify_followup_query", **state}
 
 
 def classify_first_query(state: IntentClassifierState, llm):
@@ -183,9 +187,11 @@ def classify_first_query(state: IntentClassifierState, llm):
     
     # Update state with classification result
     state["first_query_type"] = intent_str.strip().lower()
+
+    print("classify_first_query state : ", state)
     
-    # Return the state dictionary
-    return {"state": state}
+    # Add explicit next destination with "next" key
+    return {"next": "create_final_intent", **state}
 
 
 def classify_followup_query(state: IntentClassifierState, llm):
@@ -204,12 +210,14 @@ def classify_followup_query(state: IntentClassifierState, llm):
     # Update state with classification result
     state["followup_query_type"] = intent_str.strip().lower()
     
-    # Return the updated state as a dictionary
-    return {"state": state}
+    # Add explicit next destination
+    return {"next": "create_final_intent", **state}
 
 
 def create_final_intent(state: IntentClassifierState):
     """Create the final intent object based on classification results."""
+
+    #print("create_final_intent state start state: ", state)
     
     # Check if it's a salutation
     if state["salutation_type"] and state["salutation_type"] != "not_salutation":
@@ -255,8 +263,8 @@ def create_final_intent(state: IntentClassifierState):
     else:
         state["final_intent"] = None
     
-    # Return the state as a dictionary and indicate it's the end of the graph
-    return {"state": state, "__end__": True}
+    # Fix the end state return format
+    return {**state, "__end__": True}
 
 
 class IntentClassifierGraph:
@@ -281,14 +289,14 @@ class IntentClassifierGraph:
         builder.add_node("classify_followup_query", lambda state: classify_followup_query(state, self.llm))
         builder.add_node("create_final_intent", create_final_intent)
         
-        # Set up the flow
+        # Set up the flow - REMOVING these direct edges that override conditional routing
         builder.set_entry_point("check_salutation")
-        builder.add_edge("check_salutation", "route_query_type")
-        builder.add_edge("check_salutation", "create_final_intent")
-        builder.add_edge("route_query_type", "classify_first_query")
-        builder.add_edge("route_query_type", "classify_followup_query")
-        builder.add_edge("classify_first_query", "create_final_intent")
-        builder.add_edge("classify_followup_query", "create_final_intent")
+        # builder.add_edge("check_salutation", "route_query_type")  # REMOVE THIS
+        # builder.add_edge("check_salutation", "create_final_intent")  # REMOVE THIS
+        # builder.add_edge("route_query_type", "classify_first_query")
+        # builder.add_edge("route_query_type", "classify_followup_query")
+        # builder.add_edge("classify_first_query", "create_final_intent")
+        # builder.add_edge("classify_followup_query", "create_final_intent")
         
         # Add conditional edges based on node output
         builder.add_conditional_edges(
@@ -306,6 +314,23 @@ class IntentClassifierGraph:
             {
                 "classify_first_query": "classify_first_query", 
                 "classify_followup_query": "classify_followup_query"
+            }
+        )
+        
+        # Add conditional edges for classification nodes to create_final_intent
+        builder.add_conditional_edges(
+            "classify_first_query",
+            lambda output: output["next"],
+            {
+                "create_final_intent": "create_final_intent"
+            }
+        )
+        
+        builder.add_conditional_edges(
+            "classify_followup_query",
+            lambda output: output["next"],
+            {
+                "create_final_intent": "create_final_intent"
             }
         )
         
