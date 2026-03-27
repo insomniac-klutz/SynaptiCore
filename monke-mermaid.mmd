@@ -1,0 +1,250 @@
+graph TD
+    subgraph root["wyrdMonke/"]
+        README["README.md"]
+        INIT["monke-init.md"]
+        SYNC["monke-sync.md"]
+        CLAUDE["monke-CLAUDE.md"]
+        MERMAID["monke-mermaid.mmd"]
+        PHIL["monke-phil.md"]
+        LOG["monke-log.md"]
+        DRAFTER["monke-drafter.md"]
+    end
+
+    subgraph status_skills["monke-status/"]
+        STATUS_SKILL["status.md"]
+    end
+
+    subgraph docs["monke-docs/"]
+        SDLC["sdlc-specs.md"]
+        DESIGN["design-specs.md"]
+        IMPL["implementation-specs.md"]
+        TEST["test-specs.md"]
+        PROJECT["project-specs.md"]
+        HLD["hld.md"]
+        OQ["open-questions.md"]
+        STATUS_TPL["status-template.md"]
+
+        subgraph lld_dir["lld/"]
+            LLD["component .md files"]
+        end
+
+        subgraph decisions_dir["decisions/"]
+            ADR["NNN-slug.md files"]
+        end
+
+        subgraph checkpoints_dir["checkpoints/"]
+            CP["phase-N-checkpoint.md files"]
+        end
+
+        subgraph flash_dir["flash/"]
+            FLASH_BRIEF["flash-brief.md"]
+            FLASH_SCOPE["flash-scope.md"]
+            FLASH_ARCH["flash-arch.md"]
+            FLASH_MANIFEST["flash-manifest.md"]
+        end
+
+        subgraph recon_dir["recon/"]
+            RECON_SURVEY["recon-survey.md"]
+            RECON_GAPS["recon-gaps.md"]
+            RECON_ROADMAP["recon-roadmap.md"]
+        end
+
+        subgraph rage_run_dir["rage-run/"]
+            RAGE_TPL["template.md"]
+        end
+
+        subgraph rage_runs_dir["rage-runs/"]
+            RAGE_LOG["YYYY-MM-DD-mode-scope.md files"]
+        end
+    end
+
+    subgraph design_skills["monke-design/"]
+        SK_DESIGN_ORCH["orchestra.md"]
+        SK_TINKER["tinker.md"]
+        SK_HLD["hld.md"]
+        SK_LLD["lld.md"]
+        SK_ADR["adr.md"]
+        SK_OQ["oq.md"]
+    end
+
+    subgraph impl_skills["monke-implement/"]
+        SK_IMPL_ORCH["orchestra.md"]
+        SK_FILL["fill.md"]
+        SK_IMPLEMENT["implement.md"]
+        SK_CHECKPOINT["checkpoint.md"]
+    end
+
+    subgraph test_skills["monke-test/"]
+        SK_TEST_ORCH["orchestra.md"]
+        SK_TESTPLAN["test-plan.md"]
+        SK_TESTRUN["test-run.md"]
+        SK_COVERAGE["coverage.md"]
+    end
+
+    subgraph flash_skills["monke-flash/"]
+        SK_FLASH_ORCH["orchestra.md"]
+        SK_SPARK["spark.md"]
+        SK_SCOPE["scope.md"]
+        SK_SKETCH["sketch.md"]
+        SK_BLITZ["blitz.md"]
+        SK_PULSE["pulse.md"]
+        SK_SNAP["snap.md"]
+    end
+
+    subgraph recon_skills["monke-recon/"]
+        SK_RECON_ORCH["orchestra.md"]
+        SK_SURVEY["survey.md"]
+        SK_RECONSTRUCT["reconstruct.md"]
+        SK_GAPS["gaps.md"]
+        SK_OQS["oqs.md"]
+        SK_ROADMAP["roadmap.md"]
+    end
+
+    subgraph rage_skills["monke-rage/"]
+        SK_RAGE_ORCH["orchestra.md"]
+        SK_BUGGY["buggy.md"]
+        SK_IMPROV["improv.md"]
+        SK_RENOUNCE["renounce.md"]
+        SK_HAUNT["haunt.md"]
+        SK_DRIFT["drift.md"]
+        SK_ECHO["echo.md"]
+    end
+
+    subgraph seer_skills["monke-seer/"]
+        SK_SEER_ORCH["orchestra.md"]
+        SK_PROFILE["profile.md"]
+        SK_EXPERIMENT["experiment.md"]
+        SK_REGISTRY["registry.md"]
+        SK_AGENTIFY["agentify.md"]
+    end
+
+    subgraph ops_skills["monke-ops/"]
+        SK_COMMIT["commit.md"]
+    end
+
+    %% CLAUDE.md is the entry point
+    CLAUDE -->|"read first"| STATUS_SKILL
+    CLAUDE -->|"read"| PROJECT
+    CLAUDE -->|"read"| HLD
+    CLAUDE -->|"read"| OQ
+
+    %% SDLC connects all specs
+    SDLC -->|"produces"| DESIGN
+    SDLC -->|"consumes"| IMPL
+    SDLC -->|"governs"| TEST
+    SDLC -->|"binds"| PROJECT
+
+    %% Design specs produce artifacts
+    DESIGN -->|"creates"| HLD
+    DESIGN -->|"creates"| LLD
+    DESIGN -->|"creates"| ADR
+    DESIGN -->|"owns"| CP
+    DESIGN -->|"references stack"| PROJECT
+
+    %% Implementation consumes design output
+    IMPL -->|"consumes"| LLD
+    IMPL -->|"records issues"| OQ
+    IMPL -->|"references stack"| PROJECT
+
+    %% Test specs govern how tests are written
+    TEST -->|"references bindings"| PROJECT
+
+    %% Project specs is the binding hub
+    PROJECT -->|"S2: stack bindings"| IMPL
+    PROJECT -->|"S9: test bindings"| TEST
+    PROJECT -->|"S10: design bindings"| DESIGN
+
+    %% Artifacts feed checkpoints
+    LLD -->|"IL-3 passed"| CP
+    HLD -->|"data flows"| CP
+    OQ -->|"resolved via"| ADR
+
+    %% Init installs skills and scaffolds project
+    INIT -->|"installs"| SK_TINKER
+    INIT -->|"scaffolds"| PROJECT
+    INIT -->|"merges"| CLAUDE
+
+    %% Sync updates skills and diffs specs
+    SYNC -->|"updates"| SK_TINKER
+    SYNC -->|"diffs"| DESIGN
+    SYNC -->|"diffs"| IMPL
+    SYNC -->|"diffs"| TEST
+
+    %% Design skills orchestrate design specs
+    SK_TINKER -->|"fills"| PROJECT
+    SK_TINKER -->|"fills"| CLAUDE
+    SK_HLD -->|"orchestrates"| DESIGN
+    SK_LLD -->|"orchestrates"| DESIGN
+    SK_ADR -->|"creates"| ADR
+    SK_OQ -->|"manages"| OQ
+
+    %% Implementation skills orchestrate implementation specs
+    SK_FILL -->|"fills"| PROJECT
+    SK_IMPLEMENT -->|"orchestrates"| IMPL
+    SK_IMPLEMENT -->|"consumes"| LLD
+    SK_CHECKPOINT -->|"creates"| CP
+
+    %% Test skills orchestrate test specs
+    SK_TESTPLAN -->|"writes plans in"| LLD
+    SK_TESTRUN -->|"executes per"| TEST
+    SK_COVERAGE -->|"measures per"| TEST
+
+    %% Rage skills scan everything
+    SK_BUGGY -->|"scans"| HLD
+    SK_BUGGY -->|"scans"| LLD
+    SK_IMPROV -->|"scans"| LLD
+    SK_HAUNT -->|"scans"| HLD
+    SK_DRIFT -->|"scans"| HLD
+    SK_DRIFT -->|"scans"| LLD
+    SK_DRIFT -->|"scans"| OQ
+    SK_ECHO -->|"scans"| LLD
+    SK_RAGE_ORCH -->|"dispatches"| SK_BUGGY
+    SK_RAGE_ORCH -->|"dispatches"| SK_IMPROV
+    SK_RAGE_ORCH -->|"dispatches"| SK_RENOUNCE
+    SK_RAGE_ORCH -->|"dispatches"| SK_HAUNT
+    SK_RAGE_ORCH -->|"dispatches"| SK_DRIFT
+    SK_RAGE_ORCH -->|"dispatches"| SK_ECHO
+    SK_BUGGY -->|"logs to"| RAGE_LOG
+    SK_HAUNT -->|"logs to"| RAGE_LOG
+
+    %% Seer skills connect to design and test specs
+    SK_SEER_ORCH -->|"dispatches"| SK_PROFILE
+    SK_SEER_ORCH -->|"dispatches"| SK_EXPERIMENT
+    SK_SEER_ORCH -->|"dispatches"| SK_REGISTRY
+    SK_PROFILE -->|"feeds"| DESIGN
+    SK_PROFILE -->|"feeds"| LLD
+    SK_EXPERIMENT -->|"creates"| ADR
+    SK_EXPERIMENT -->|"references"| SK_PROFILE
+    SK_REGISTRY -->|"pins in"| LLD
+    SK_REGISTRY -->|"references"| PROJECT
+    SK_SEER_ORCH -->|"dispatches"| SK_AGENTIFY
+    SK_AGENTIFY -->|"creates"| ADR
+    SK_AGENTIFY -->|"reads"| HLD
+    SK_AGENTIFY -->|"references"| DESIGN
+
+    %% Ops skills
+    SK_COMMIT -->|"updates"| LOG
+
+    %% Flash skills produce flash artifacts
+    SK_SPARK -->|"produces"| FLASH_BRIEF
+    SK_SCOPE -->|"produces"| FLASH_SCOPE
+    SK_SKETCH -->|"produces"| FLASH_ARCH
+    SK_BLITZ -->|"consumes"| FLASH_ARCH
+    SK_PULSE -->|"loops to"| SK_BLITZ
+    SK_SNAP -->|"produces"| FLASH_MANIFEST
+    SK_SNAP -->|"hands off to"| SK_SURVEY
+
+    %% Recon skills reconstruct from code
+    SK_SURVEY -->|"produces"| RECON_SURVEY
+    SK_RECONSTRUCT -->|"reverse-engineers"| HLD
+    SK_RECONSTRUCT -->|"reverse-engineers"| LLD
+    SK_GAPS -->|"produces"| RECON_GAPS
+    SK_OQS -->|"populates"| OQ
+    SK_ROADMAP -->|"produces"| RECON_ROADMAP
+    SK_ROADMAP -->|"connects to"| SK_IMPLEMENT
+
+    %% Status skill reads everything
+    STATUS_SKILL -->|"scans"| HLD
+    STATUS_SKILL -->|"scans"| LLD
+    STATUS_SKILL -->|"scans"| OQ
+    STATUS_SKILL -->|"scans"| CP

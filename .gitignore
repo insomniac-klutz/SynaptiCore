@@ -179,3 +179,7 @@ nsp-1/
 *.pdf
 *.png
 *.html
+
+# Claude Code
+.claude/
+CLAUDE.md
